@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+*.egg-info/
+dist/
+build/
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Node
+node_modules/
+.next/
+.turbo/
+out/
+
+# Env files
+.env
+.env.local
+.env*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Claude Code local config
+.claude/
+
+# Docker volumes (local dev)
+postgres_data/
+
+# Legacy pre-monorepo directory (content migrated to services/indexer/)
+reelinvesting-indexer/
