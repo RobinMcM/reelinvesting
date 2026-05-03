@@ -1,4 +1,5 @@
 import type { AdminStats, IntelligenceEvent } from './types';
+import { MOCK_EVENTS, MOCK_HIGH_IMPACT } from './mock-events';
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_INDEXER_API_URL || 'http://localhost:8000';
@@ -17,7 +18,8 @@ async function apiFetch<T>(path: string): Promise<T | null> {
 
 export async function getRecentEvents(limit = 20): Promise<IntelligenceEvent[]> {
   const data = await apiFetch<IntelligenceEvent[]>(`/events/recent?limit=${limit}`);
-  return data ?? [];
+  if (data && data.length > 0) return data;
+  return MOCK_EVENTS.slice(0, limit);
 }
 
 export async function getHighImpactEvents(
@@ -27,7 +29,8 @@ export async function getHighImpactEvents(
   const data = await apiFetch<IntelligenceEvent[]>(
     `/events/high-impact?min_score=${minScore}&limit=${limit}`,
   );
-  return data ?? [];
+  if (data && data.length > 0) return data;
+  return MOCK_HIGH_IMPACT.slice(0, limit);
 }
 
 export async function getAdminStats(): Promise<AdminStats | null> {

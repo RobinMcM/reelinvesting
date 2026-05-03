@@ -117,13 +117,8 @@ export default async function NewsroomPage() {
 function EmptyState() {
   return (
     <div className="rounded-xl border border-slate-800 bg-slate-900/30 p-12 text-center">
-      <p className="text-slate-500">No intelligence events available yet.</p>
-      <p className="mt-1 text-xs text-slate-600">
-        Start the indexer service to populate the feed.
-      </p>
-      <p className="mt-4 text-xs font-mono text-slate-700">
-        docker compose up -d
-      </p>
+      <p className="text-slate-500">No intelligence events available right now.</p>
+      <p className="mt-1 text-xs text-slate-600">Check back soon — the feed updates continuously.</p>
     </div>
   );
 }
