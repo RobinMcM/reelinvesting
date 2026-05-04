@@ -14,6 +14,7 @@ from app.api.event_routes import router as event_router
 from app.api.health_routes import router as health_router
 from app.api.source_routes import router as source_router
 from app.config import settings
+from app.listeners.alpaca_news_listener import AlpacaNewsListener
 from app.listeners.mock_agitator_listener import MockAgitatorListener
 from app.listeners.mock_news_listener import MockNewsListener
 from app.logging_config import configure_logging, get_logger
@@ -33,6 +34,16 @@ def _build_worker() -> IntelligenceIngestionWorker:
     if settings.ENABLE_MOCK_AGITATORS:
         listeners.append(MockAgitatorListener())
         logger.info("listener_enabled", listener="MockAgitatorListener")
+
+    if settings.ENABLE_ALPACA_NEWS:
+        if settings.ALPACA_API_KEY and settings.ALPACA_SECRET_KEY:
+            listeners.append(AlpacaNewsListener())
+            logger.info("listener_enabled", listener="AlpacaNewsListener")
+        else:
+            logger.warning(
+                "alpaca_news_skipped",
+                reason="ALPACA_API_KEY or ALPACA_SECRET_KEY not set",
+            )
 
     if not listeners:
         logger.warning("no_listeners_configured")

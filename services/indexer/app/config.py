@@ -22,5 +22,13 @@ class Settings(BaseSettings):
     ENABLE_MOCK_NEWS: bool = True
     ENABLE_MOCK_AGITATORS: bool = True
 
+    # Alpaca — news/intelligence data only, no trading
+    ALPACA_API_KEY: str = ""
+    ALPACA_SECRET_KEY: str = ""
+    ALPACA_PAPER: bool = True
+    ENABLE_ALPACA_NEWS: bool = False
+    ALPACA_NEWS_SYMBOLS: str = "AAPL,MSFT,NVDA,TSLA,SPY,QQQ,BTCUSD,ETHUSD"
+    ALPACA_NEWS_LIMIT: int = 20
+
 
 settings = Settings()

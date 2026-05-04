@@ -57,11 +57,12 @@ Listeners → Normalizer → Spaces Store → Postgres Index → Classifier → 
 
 Each `IntelligenceListener` polls a source and returns `RawIntelligenceItem` objects.
 
-Currently active:
+Currently available:
 - **MockNewsListener** — sample market news (Nvidia, Fed, OPEC, Apple, crypto ETF)
 - **MockAgitatorListener** — sample influence events (Trump tariffs, Musk/Tesla, BoE, SEC)
+- **AlpacaNewsListener** — real news articles from the Alpaca market data API
 
-Real listeners (Alpaca News, RSS, X API, SEC EDGAR, economic calendar) can be added by implementing `IntelligenceListener`.
+Real listeners (RSS, X API, SEC EDGAR, economic calendar) can be added by implementing `IntelligenceListener`.
 
 ---
 
@@ -223,8 +224,96 @@ GET   /admin/stats                            # Ingestion statistics
 | `API_PORT` | `8000` | Uvicorn bind port |
 | `ENABLE_MOCK_NEWS` | `true` | Enable the mock news listener |
 | `ENABLE_MOCK_AGITATORS` | `true` | Enable the mock agitator listener |
+| `ALPACA_API_KEY` | `""` | Alpaca API key (news data only) |
+| `ALPACA_SECRET_KEY` | `""` | Alpaca secret key |
+| `ALPACA_PAPER` | `true` | Use paper environment (no effect on news) |
+| `ENABLE_ALPACA_NEWS` | `false` | Enable the Alpaca news listener |
+| `ALPACA_NEWS_SYMBOLS` | `AAPL,MSFT,...` | Comma-separated list of symbols to fetch news for |
+| `ALPACA_NEWS_LIMIT` | `20` | Max articles per ingestion cycle |
 
 If Spaces credentials are absent, uploads are silently skipped — events are still indexed in Postgres with an empty `spaces_key`.
+
+---
+
+## Alpaca News Integration
+
+The `AlpacaNewsListener` uses the [alpaca-py](https://github.com/alpacahq/alpaca-py) SDK to fetch real market news articles.
+
+**This integration is for news intelligence only.** It does not initialise a trading client, submit orders, access portfolio data, or generate buy/sell signals.
+
+### Getting Alpaca API Keys
+
+1. Sign up for a free account at [https://alpaca.markets](https://alpaca.markets)
+2. Go to **Paper Trading** → **API Keys** (the free data tier works without a funded account)
+3. Generate a key pair — copy the API Key ID and Secret Key
+4. Add them to your `.env`:
+
+```env
+ALPACA_API_KEY=PKXXXXXXXXXXXXXXXXXXXXXXXX
+ALPACA_SECRET_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ENABLE_ALPACA_NEWS=true
+```
+
+### Enabling the Alpaca Listener
+
+Set the following in your `.env` (or `services/indexer/.env`):
+
+```env
+# Enable real Alpaca news (disable mocks in production if preferred)
+ENABLE_ALPACA_NEWS=true
+ALPACA_API_KEY=PKXXXXXXXXXXXXXXXXXXXXXXXX
+ALPACA_SECRET_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# Symbols to watch — stocks, ETFs, and crypto pairs
+ALPACA_NEWS_SYMBOLS=AAPL,MSFT,NVDA,TSLA,SPY,QQQ,BTCUSD,ETHUSD
+
+# Articles fetched per ingestion cycle
+ALPACA_NEWS_LIMIT=20
+
+# Keep mocks on for testing alongside real data, or turn them off in production
+ENABLE_MOCK_NEWS=false
+ENABLE_MOCK_AGITATORS=false
+```
+
+### Manual Smoke Test
+
+```bash
+# Rebuild and restart with Alpaca enabled
+docker compose down
+docker compose up -d --build
+docker compose logs -f indexer
+```
+
+Expected log output (on first ingestion cycle):
+```
+listener_enabled  listener=AlpacaNewsListener
+alpaca_news_fetched  count=20  symbols=[...]
+event_indexed  source_name=alpaca_news  ...
+ingestion_cycle_complete  processed=N  skipped=0  errors=0
+```
+
+Verify via API:
+```bash
+# Events should include alpaca_news source
+curl http://localhost:8000/events/recent
+
+# Stats should show NEWS records
+curl http://localhost:8000/admin/stats
+```
+
+### Deduplication
+
+Alpaca articles deduplicate using the Alpaca article ID as `external_id`. The stable ID is:
+
+```
+sha256("NEWS:alpaca_news:<article_id>")
+```
+
+Re-running the ingestion cycle fetches the same articles but skips any already in Postgres — no duplicates are inserted.
+
+### Error Handling
+
+If the Alpaca API is unreachable or returns an error, `AlpacaNewsListener.fetch_latest()` logs the exception and returns an empty list. The scheduler continues running and retries on the next cycle.
 
 ---
 
