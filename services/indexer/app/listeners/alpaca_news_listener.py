@@ -38,7 +38,7 @@ class AlpacaNewsListener(IntelligenceListener):
     def fetch_latest(self) -> list[RawIntelligenceItem]:
         try:
             request = NewsRequest(
-                symbols=self._symbols,
+                symbols=",".join(self._symbols),
                 limit=self._limit,
             )
             response = self._client.get_news(request)
