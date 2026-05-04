@@ -36,6 +36,3 @@ Thumbs.db
 
 # Docker volumes (local dev)
 postgres_data/
-
-# Legacy pre-monorepo directory (content migrated to services/indexer/)
-reelinvesting-indexer/
